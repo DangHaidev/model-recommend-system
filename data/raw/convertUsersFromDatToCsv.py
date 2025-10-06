@@ -38,11 +38,29 @@ occupation_mapping = {
     20: 'writer'
 }
 
+gender_mapping = {
+    'M': 0,
+    'F': 1
+}
+
 if not os.path.exists(input_file):
     print(f"Error: File '{input_file}' not found. Please check the path or file name.")
 else:
-    df = pd.read_csv(input_file, sep='::', header=None, names=['UserID', 'Gender', 'Age', 'Occupation', 'Zip-code'], encoding='latin1')
+    df = pd.read_csv(
+        input_file,
+        sep='::',
+        header=None,
+        names=['UserID', 'Gender', 'Age', 'Occupation', 'Zip-code'],
+        encoding='latin1',
+        engine='python'   # bắt buộc nếu sep='::'
+    )
+
+    # Mapping dữ liệu
+    df['Gender'] = df['Gender'].map(gender_mapping)
     df['Age'] = df['Age'].map(age_mapping)
     df['Occupation'] = df['Occupation'].map(occupation_mapping)
+
+    # Xuất CSV
     df.to_csv(output_file, index=False, encoding='utf-8')
     print(f"Converted {input_file} to {output_file}")
+    print(f"Total rows: {len(df)}")
