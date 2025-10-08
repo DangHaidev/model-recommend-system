@@ -1,12 +1,18 @@
 import pandas as pd
-import os 
+import pprint
 
-output_file = r'data/raw/users.csv'
+data = pd.read_csv('data/raw/users.csv')
 
-# Bước 1: đọc dữ liệu
-users = pd.read_csv(output_file)
-
-# Bước 2: xem sơ bộ
-print(users.head())
-print(users.info())
-print(users.isna().sum())
+number_of_rows = data.shape[0]
+number_of_columns = data.shape[1]
+data_types = data.dtypes
+missing_values = data.isnull().sum()
+descriptive_stats = data.describe()
+basic_structure = {
+    'number_of_rows': number_of_rows,
+    'number_of_columns': number_of_columns,
+    'data_types': data_types.to_dict(),
+    'missing_values': missing_values.to_dict(),
+    'descriptive_stats': descriptive_stats.to_dict()
+}
+pprint.pprint(basic_structure)
