@@ -34,7 +34,11 @@ class CF(object):
         self.k = k
         self.dist_func = dist_func
         self.Ybar_data = None
+
         # số lượng user và item, +1 vì mảng bắt đầu từ 0
+        self.Y_data[:, 0] -= 1  # UserID -> 0-based
+        self.Y_data[:, 1] -= 1  # MovieID -> 0-based    
+
         self.n_users = int(np.max(self.Y_data[:, 0])) + 1
         self.n_items = int(np.max(self.Y_data[:, 1])) + 1
 
@@ -68,6 +72,27 @@ class CF(object):
         """
         eps = 1e-6
         self.S = self.dist_func(self.Ybar.T, self.Ybar.T)
+
+        # # ====================== IN RA KẾT QUẢ ======================
+        # import pandas as pd
+        # print("\n===== 🔗 MA TRẬN TƯƠNG ĐỒNG (Similarity Matrix) =====")
+
+        # # Nếu uuCF = 1 → user-user CF
+        # if self.uuCF:
+        #     print(">> Kiểu CF: User-User (uuCF)")
+        #     n_show = min(10, self.n_users)
+        #     df_sim = pd.DataFrame(self.S[:n_show, :n_show],
+        #                         columns=[f"User_{i}" for i in range(n_show)],
+        #                         index=[f"User_{i}" for i in range(n_show)])
+        # else:
+        #     print(">> Kiểu CF: Item-Item (iiCF)")
+        #     n_show = min(10, self.n_items)
+        #     df_sim = pd.DataFrame(self.S[:n_show, :n_show],
+        #                         columns=[f"Item_{i}" for i in range(n_show)],
+        #                         index=[f"Item_{i}" for i in range(n_show)])
+
+        # print(f"Shape: {self.S.shape}")
+        # print(df_sim.round(3))
 
     # hàm nằm trong class CF
     def __pred(self, u, i, normalized=1):

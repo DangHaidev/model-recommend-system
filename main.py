@@ -18,8 +18,8 @@ def main():
     rs.similarity()
     print("✅ Huấn luyện xong!")
 
-    # 4️⃣ Gợi ý cho một user cụ thể (ví dụ user_id = 10)
-    user_id = 10
+    # 4️⃣ Gợi ý cho một user cụ thể (ví dụ user_id = 2)
+    user_id = 2
     top_n = 10
     print(f"🔹 Gợi ý top {top_n} phim cho user {user_id} ...")
 
