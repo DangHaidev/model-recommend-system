@@ -19,8 +19,8 @@ class ContentBasedRecommender:
             index=self.movies_df['Title']
         )
 
-        # print("\n=== BẢNG THỐNG KÊ 0/1 CỦA THỂ LOẠI ===")
-        # print(self.binary_matrix.head(8))
+        print("\n=== BẢNG THỐNG KÊ 0/1 CỦA THỂ LOẠI ===")
+        print(self.binary_matrix.head(8))
 
     def create_tfidf_matrix(self):
         self.movies_df['Genres_str'] = self.movies_df['Genres'].apply(lambda x: ' '.join(x))
@@ -32,8 +32,8 @@ class ContentBasedRecommender:
             index=self.movies_df['Title']
         )
 
-        # print("\n=== BẢNG TF-IDF CỦA THỂ LOẠI ===")
-        # print(self.tfidf_df.head(8))
+        print("\n=== BẢNG TF-IDF CỦA THỂ LOẠI ===")
+        print(self.tfidf_df.head(8))
 
         self.cosine_sim = cosine_similarity(self.tfidf_matrix, self.tfidf_matrix)
         self.indices = pd.Series(self.movies_df.index, index=self.movies_df['Title']).drop_duplicates()
