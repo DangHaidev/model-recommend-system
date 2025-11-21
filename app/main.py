@@ -91,6 +91,11 @@ def recommend_movies(user_id, wm, wu, method, top_n):
 app = FastAPI()
 
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
 class RecommendRequest(BaseModel):
     user_id: int
     wm: float = 1.0
