@@ -19,7 +19,7 @@ cf_model.similarity()
 print("\nKết hợp mô hình Hybrid...")
 hybrid = HybridRecommender(content_model, cf_model, alpha=0.6)
 
-user_id = 3
+user_id = 1
 liked_title = "Toy Story (1995)"
 top_n = 10
 

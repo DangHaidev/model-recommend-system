@@ -13,9 +13,7 @@ def get_dataframe_ratings_base():
    Y_data = ratings[r_cols].values
    return Y_data
 
-
-
-class CF(object):
+class CF(object):   
     """
     class Collaborative Filtering, hệ thống đề xuất dựa trên sự tương đồng
     giữa các users với nhau, giữa các items với nhau
