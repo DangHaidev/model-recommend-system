@@ -46,11 +46,11 @@ def load_user_profile_vectors():
     else:
         raise FileNotFoundError(f"Không tìm thấy {file_path}")
 
-def load_train_ratings(version: str = "8.0"):
+def load_train_ratings(version: str = "80"):
     file_path = PROCESSED_DIR / f"train_ratings_{version}.csv"
     return pd.read_csv(file_path)
 
-def load_test_ratings(version: str = "2.0"):
+def load_test_ratings(version: str = "20"):
     file_path = PROCESSED_DIR / f"test_ratings_{version}.csv"
     return pd.read_csv(file_path)
 
