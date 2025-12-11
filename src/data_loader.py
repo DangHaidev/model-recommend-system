@@ -1,40 +1,78 @@
 import pandas as pd
-import os
+from pathlib import Path
 
-DATA_DIR = "data/processed/"
+DATA_DIR = Path("./data")
+PROCESSED_DIR = DATA_DIR / "processed"
+VECTOR_DIR = DATA_DIR / "vector"
+def load_movies():
+    file_path = PROCESSED_DIR / "movies.csv"
+    return pd.read_csv(file_path)
 
-# ----------------------------------------------------------
-# 1. HÀM CHUNG ĐỌC FILE CSV
-# ----------------------------------------------------------
-def read_csv_file(file_name, folder_path=DATA_DIR):
-    """Hàm đọc file CSV với đường dẫn linh hoạt"""
-    path = os.path.join(folder_path, file_name)
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"❌ Không tìm thấy file: {path}")
-    df = pd.read_csv(path)
-    print(f"✅ Loaded '{file_name}' ({len(df)} rows)")
-    return df
+def load_links():
+    file_path = PROCESSED_DIR / "links.csv"
+    return pd.read_csv(file_path)
 
+def load_ratings():
+    file_path = PROCESSED_DIR / "ratings.csv"
+    return pd.read_csv(file_path)
 
-# ----------------------------------------------------------
-# 2. HÀM RIÊNG TỪNG FILE
-# ----------------------------------------------------------
-def load_movies(file_path=None):
-    """Đọc dữ liệu phim sau tiền xử lý"""
-    if file_path:
-        return read_csv_file(file_path, folder_path="")
-    return read_csv_file("movies_after_preprocessing.csv")
+def load_feature_correlation():
+    file_path = PROCESSED_DIR / "feature_correlation.csv"
+    return pd.read_csv(file_path)
 
+def load_user_actions():
+    file_path = PROCESSED_DIR / "user_actions.csv"
+    return pd.read_csv(file_path)
 
-def load_ratings(file_path=None):
-    """Đọc dữ liệu ratings"""
-    if file_path:
-        return read_csv_file(file_path, folder_path="")
-    return read_csv_file("ratings_after_preprocessing.csv")
+def load_user_profiles():
+    file_path = PROCESSED_DIR / "user_profiles.csv"
+    return pd.read_csv(file_path)
 
+def load_users():
+    file_path = PROCESSED_DIR / "users.csv"
+    return pd.read_csv(file_path)
 
-def load_users(file_path=None):
-    """Đọc dữ liệu người dùng"""
-    if file_path:
-        return read_csv_file(file_path, folder_path="")
-    return read_csv_file("users_after_preprocessing.csv")
+def load_movie_vectors():
+    file_path = VECTOR_DIR / "movie_vectors.csv"
+    if file_path.exists():
+        return pd.read_csv(file_path)
+    else:
+        raise FileNotFoundError(f"Không tìm thấy {file_path}")
+
+def load_user_profile_vectors():
+    file_path = VECTOR_DIR / "user_profile_vectors.csv"
+    if file_path.exists():
+        return pd.read_csv(file_path)
+    else:
+        raise FileNotFoundError(f"Không tìm thấy {file_path}")
+
+def load_train_ratings(version: str = "80"):
+    file_path = PROCESSED_DIR / f"train_ratings_{version}.csv"
+    return pd.read_csv(file_path)
+
+def load_test_ratings(version: str = "20"):
+    file_path = PROCESSED_DIR / f"test_ratings_{version}.csv"
+    return pd.read_csv(file_path)
+
+def check_all_files():
+    required_files = [
+        "movies.csv", "links.csv", "ratings.csv",
+        "user_actions.csv", "user_profiles.csv", "users.csv",
+        "feature_correlation.csv"
+    ]
+    missing = [f for f in required_files if not (PROCESSED_DIR / f).exists()]
+    if missing:
+        print("Thiếu các file sau:", missing)
+    else:
+        print("Tất cả file cần thiết đều đã có sẵn!")
+
+if __name__ == "__main__":
+    check_all_files()
+    
+    movies = load_movies()
+    ratings = load_ratings()
+    user_actions = load_user_actions()
+    
+    print(f"movies: {movies.shape}")
+    print(f"ratings: {ratings.shape}")
+    print(f"user_actions: {user_actions.shape}")
