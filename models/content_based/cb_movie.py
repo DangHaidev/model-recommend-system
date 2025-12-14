@@ -17,6 +17,10 @@ movieid_to_genres = movies_meta.set_index('ID')['GenresSet'].to_dict()
 movie_vecs = np.stack(movies_df['movieVector'].values)
 movie_ids = movies_df['ID'].values
 
+# Compute cosine similarity
+
+
+# Compute Manhattan similarity
 def compute_manhattan_similarity(vecs):
     n = vecs.shape[0]
     sims = np.zeros((n, n))
