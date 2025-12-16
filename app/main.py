@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi import Query
 import sys
 from pathlib import Path
 
@@ -13,7 +14,7 @@ sys.path.append(str(PROJECT_ROOT))
 # ===============================
 from models.content_based.cb_movie import (
     recommend_similar_movies,
-    init_model  # nếu bạn chưa có thì có thể bỏ dòng này
+    # init_model  # nếu bạn chưa có thì có thể bỏ dòng này
 )
 
 # ===============================
@@ -49,8 +50,8 @@ def health_check():
 # ===============================
 # Recommendation endpoint
 # ===============================
-@app.get("/recommend/{movie_id}")
-def recommend_movies(movie_id: int, top_n: int = 10):
+@app.get("/recommend/contentbased/{movie_id}")
+def recommend_movies(movie_id: int,top_n: int = Query(10, ge=1)):
     """
     Get top-N similar movies by movie_id
     """
