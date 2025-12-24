@@ -29,6 +29,9 @@ user_vectors_df = load_user_profile_vectors()
 user_profile = load_user_profiles()
 user_action = load_user_actions()
 
+user_vectors_df['UserID'] = user_vectors_df['UserID'].astype(int)
+
+
 # parse vectors
 movies['movieVector'] = movies['movieVector'].apply(lambda x: np.array(eval(x)))
 user_vectors_df['userVector'] = user_vectors_df['userVector'].apply(lambda x: np.array(eval(x)))
