@@ -1,7 +1,10 @@
+from fastapi import FastAPI
+from fastapi_utils.tasks import repeat_every
 from fastapi import FastAPI, HTTPException
 from fastapi import Query
 import sys
 from pathlib import Path
+
 
 # ===============================
 # Add project root to PYTHONPATH
@@ -19,6 +22,7 @@ from models.content_based.cb_movie import (
 from models.content_based.cb_user_profile import (
     recommend_movies as recommend_user_profile
 )
+from src.pipeline import run_pipeline
 
 # ===============================
 # Create FastAPI app
@@ -30,12 +34,12 @@ app = FastAPI(
 )
 
 # ===============================
-# Startup event
+# Startup: load model 1 lần
 # ===============================
 @app.on_event("startup")
 def startup_event():
     """
-    Load model / compute similarity matrix once
+    Chạy 1 lần duy nhất khi app start
     """
     try:
         init_model()
@@ -43,13 +47,30 @@ def startup_event():
     except Exception as e:
         print("❌ Failed to initialize model:", e)
 
+
+# ===============================
+# Background batch job (mỗi 60s)
+# ===============================
+@app.on_event("startup")
+@repeat_every(seconds=300, wait_first=True)
+def batch_job() -> None:
+    """
+    Batch pipeline chạy nền, không block API
+    """
+    try:
+        print("🚀 Running recommendation pipeline...")
+        run_pipeline()
+        print("✅ Pipeline finished")
+    except Exception as e:
+        print("❌ Pipeline error:", e)
+
+
 # ===============================
 # Health check
 # ===============================
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
-
 # ===============================
 # Recommendation endpoint
 # ===============================
@@ -106,7 +127,7 @@ def recommend_movies2( user_id: int,
     except IndexError:
         raise HTTPException(
             status_code=404,
-            detail=f"Movie ID {movie_id} not found"
+            detail=f"Movie ID {user_id} a not found"
         )
 
     except Exception as e:
