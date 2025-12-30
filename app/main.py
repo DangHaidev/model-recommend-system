@@ -1,119 +1,137 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
-import pandas as pd
-import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.preprocessing import normalize
-
-# ============================
-# Load dữ liệu
-# ============================
-print("Loading CSV data...")
-
-movies = pd.read_csv("vector_model/movie_vector.csv")
-user_vectors_df = pd.read_csv("vector_model/user_profile_vector.csv")
-user_profile = pd.read_csv("vector_model/user_profiles.csv")
-user_actions = pd.read_csv("vector_model/user_actions.csv")
-
-# Convert string-list → numpy array
-movies["movieVector"] = movies["movieVector"].apply(lambda x: np.array(eval(x)))
-user_vectors_df["userVector"] = user_vectors_df["userVector"].apply(lambda x: np.array(eval(x)))
-
-# Merge để xác định relevant movie
-df = user_profile.merge(user_actions, left_on="ActionID", right_on="ID", how="left")
-
-RELEVANT_THRESHOLD = 3.0
+from fastapi_utils.tasks import repeat_every
+from fastapi import FastAPI, HTTPException
+from fastapi import Query
+import sys
+from pathlib import Path
 
 
-def relevant_movies(user_id):
-    data = df[df["UserID"] == user_id]
-    rel = data[data["Weight"] >= RELEVANT_THRESHOLD]["MovieID"].unique()
-    return set(rel)
+# ===============================
+# Add project root to PYTHONPATH
+# ===============================
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(PROJECT_ROOT))
 
+# ===============================
+# Import recommendation function
+# ===============================
+from models.content_based.cb_movie import (
+    recommend_similar_movies,
+    # init_model  # nếu bạn chưa có thì có thể bỏ dòng này
+)
+from models.content_based.cb_user_profile import (
+    recommend_movies as recommend_user_profile
+)
+from src.pipeline import run_pipeline
 
-# ============================
-# Utility
-# ============================
-def apply_ratio(movie_vecs, user_vec, wm, wu):
-    return movie_vecs * wm, user_vec * wu
+# ===============================
+# Create FastAPI app
+# ===============================
+app = FastAPI(
+    title="Movie Recommendation API",
+    description="Content-based movie recommendation system",
+    version="1.0.0"
+)
 
-
-# ============================
-# Recommend function
-# ============================
-def recommend_movies(user_id, wm, wu, method, top_n):
-    # Lấy userVector
-    uvec = user_vectors_df.loc[user_vectors_df["UserID"] == user_id, "userVector"].values[0]
-
-    # Lấy tất cả movie vectors
-    mvecs = np.stack(movies["movieVector"].values)
-
-    # Áp dụng trọng số cho user & movie
-    mvecs, uvec = apply_ratio(mvecs, uvec, wm, wu)
-    uvec = uvec.reshape(1, -1)
-
-    # --- similarity method ---
-    if method == "cosine":
-        sims = cosine_similarity(uvec, mvecs)[0]
-
-    elif method == "pearson":
-        sims = np.array([
-            np.corrcoef(uvec.flatten(), mv.flatten())[0, 1]
-            for mv in mvecs
-        ])
-        sims = np.nan_to_num(sims)
-
-    elif method == "jaccard":
-        ub = (uvec > 0).astype(int)
-        mb = (mvecs > 0).astype(int)
-        sims = np.array([
-            np.sum(np.minimum(ub, mv)) / np.sum(np.maximum(ub, mv))
-            for mv in mb
-        ])
-
-    elif method == "manhattan":
-        sims = -np.sum(np.abs(mvecs - uvec), axis=1)
-
-    else:
-        raise ValueError("Invalid method")
-
-    movies["sim"] = sims
-
-    result = movies.sort_values("sim", ascending=False)[["ID", "Title", "sim"]].head(top_n)
-
-    return result.to_dict(orient="records")
-
-
-# ============================
-# FastAPI
-# ============================
-
-app = FastAPI()
-
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
-
-
-class RecommendRequest(BaseModel):
-    user_id: int
-    wm: float = 1.0
-    wu: float = 1.0
-    method: str = "cosine"
-    top_n: int = 10
-
-
-@app.post("/recommend")
-def recommend(req: RecommendRequest):
+# ===============================
+# Startup: load model 1 lần
+# ===============================
+@app.on_event("startup")
+def startup_event():
+    """
+    Chạy 1 lần duy nhất khi app start
+    """
     try:
-        result = recommend_movies(
-            user_id=req.user_id,
-            wm=req.wm,
-            wu=req.wu,
-            method=req.method,
-            top_n=req.top_n
-        )
-        return {"user_id": req.user_id, "results": result}
+        init_model()
+        print("✅ Recommendation model initialized")
     except Exception as e:
-        return {"error": str(e)}
+        print("❌ Failed to initialize model:", e)
+
+
+# ===============================
+# Background batch job (mỗi 60s)
+# ===============================
+@app.on_event("startup")
+@repeat_every(seconds=300, wait_first=True)
+def batch_job() -> None:
+    """
+    Batch pipeline chạy nền, không block API
+    """
+    try:
+        print("🚀 Running recommendation pipeline...")
+        run_pipeline()
+        print("✅ Pipeline finished")
+    except Exception as e:
+        print("❌ Pipeline error:", e)
+
+
+# ===============================
+# Health check
+# ===============================
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+# ===============================
+# Recommendation endpoint
+# ===============================
+@app.get("/recommend/contentbased/{movie_id}")
+def recommend_movies(movie_id: int,top_n: int = Query(10, ge=1)):
+    """
+    Get top-N similar movies by movie_id
+    """
+    try:
+        df = recommend_similar_movies(movie_id, top_n)
+
+        return {
+            "movie_id": movie_id,
+            "top_n": top_n,
+            "recommendations": df.to_dict(orient="records")
+        }
+
+    except IndexError:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Movie ID {movie_id} not found"
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+@app.get("/recommend/userprofile/{user_id}")
+def recommend_movies2( user_id: int,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=50),
+    wm: float = 1.0,
+    wu: float = 1.0):
+    """
+    Get top-N similar movies by user_id
+    """
+    try:
+        df, total = recommend_user_profile( user_id=user_id,
+        page=page,
+        page_size=page_size,
+        wm=wm,
+        wu=wu)
+
+        return {
+        "user_id": user_id,
+        "page": page,
+        "page_size": page_size,
+        "total_items": total,
+        "total_pages": (total + page_size - 1) // page_size,
+        "recommendations": df.to_dict(orient="records")
+    }
+
+    except IndexError:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Movie ID {user_id} a not found"
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )

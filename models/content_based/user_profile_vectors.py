@@ -16,7 +16,6 @@ from src.data_loader import (
 
 OUTPUT_PATH = Path("./data/vector/user_profile_vectors.csv")
 
-
 def compute_user_profile_vectors(
     user_profiles_df: pd.DataFrame,
     user_actions_df: pd.DataFrame,
