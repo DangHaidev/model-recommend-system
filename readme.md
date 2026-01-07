@@ -1,23 +1,23 @@
-movielens-recommender/
-├── data/
-│ ├── raw/
-│ └── processed/
-├── notebooks/
-│ └── EDA.ipynb
-├── src/
-│ ├── data_loader.py
-│ ├── content_based.py
-│ ├── collaborative.py
-│ ├── hybrid.py
-│ ├── evaluation.py
-│ └── utils.py
-├── app/
-│ ├── api.py
-│ └── ui.py
-├── tests/
-├── requirements.txt
-├── README.md
-└── main.py
+    movielens-recommender/
+    ├── data/
+    │ ├── raw/
+    │ └── processed/
+    ├── notebooks/
+    │ └── EDA.ipynb
+    ├── src/
+    │ ├── data_loader.py
+    │ ├── content_based.py
+    │ ├── collaborative.py
+    │ ├── hybrid.py
+    │ ├── evaluation.py
+    │ └── utils.py
+    ├── app/
+    │ ├── api.py
+    │ └── ui.py
+    ├── tests/
+    ├── requirements.txt
+    ├── README.md
+    └── main.py
 
 📁 data/
 data/raw/
