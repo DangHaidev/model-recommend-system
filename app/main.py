@@ -6,36 +6,24 @@ import sys
 from pathlib import Path
 
 
-# ===============================
-# Add project root to PYTHONPATH
-# ===============================
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT))
 
-# ===============================
-# Import recommendation function
-# ===============================
 from models.content_based.cb_movie import (
     recommend_similar_movies,
-    # init_model  # nếu bạn chưa có thì có thể bỏ dòng này
 )
 from models.content_based.cb_user_profile import (
     recommend_movies as recommend_user_profile
 )
 from src.pipeline import run_pipeline
 
-# ===============================
-# Create FastAPI app
-# ===============================
 app = FastAPI(
     title="Movie Recommendation API",
     description="Content-based movie recommendation system",
     version="1.0.0"
 )
 
-# ===============================
-# Startup: load model 1 lần
-# ===============================
 @app.on_event("startup")
 def startup_event():
     """
@@ -47,10 +35,6 @@ def startup_event():
     except Exception as e:
         print("❌ Failed to initialize model:", e)
 
-
-# ===============================
-# Background batch job (mỗi 60s)
-# ===============================
 @app.on_event("startup")
 @repeat_every(seconds=300, wait_first=True)
 def batch_job() -> None:
@@ -64,16 +48,9 @@ def batch_job() -> None:
     except Exception as e:
         print("❌ Pipeline error:", e)
 
-
-# ===============================
-# Health check
-# ===============================
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
-# ===============================
-# Recommendation endpoint
-# ===============================
 @app.get("/recommend/contentbased/{movie_id}")
 def recommend_movies(movie_id: int,top_n: int = Query(10, ge=1)):
     """
